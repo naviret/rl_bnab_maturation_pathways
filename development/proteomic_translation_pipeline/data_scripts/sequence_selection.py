@@ -121,14 +121,15 @@ for rep in repertoires:
         idx = extract.index("aaSeqImputedVDJRegion")
         peptide_seqs = seqs[:, idx]
 
-        
 
 
 
 
 
 
-def ESM2_embed()
+
+def ESM2_embed():
+    pass
 
 
 
