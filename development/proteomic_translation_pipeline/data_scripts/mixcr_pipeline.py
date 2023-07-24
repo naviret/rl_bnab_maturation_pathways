@@ -104,6 +104,7 @@ for i, rep in enumerate(repertoires):
     
     insert.append(tuple(rep_insert))
 
+
 # Insert into database
 insert_query = str()
 for f in fields:
@@ -117,6 +118,7 @@ with connect.cursor() as cursor:
     insert)
 
 connect.close()
+
 
 # Execute MiXCR_analyze command (in batches of 6)
 def MiXCR_analyze(repertoires, batch_size = 6):
@@ -175,13 +177,3 @@ def MiXCR_export(repertoires, batch_size = 12):
 # Execute MiXCR Pipeline
 MiXCR_analyze(repertoires=repertoires)
 MiXCR_export(repertoires=repertoires)
-
-
-"""
-repertoires = list()
-for rep in os.listdir(raw_data_dir):
-    for c in chains:
-        if c.lower() in rep.lower():
-            if not c in repertoires.keys():
-                
-"""
