@@ -26,7 +26,7 @@ selection_criteria = args.selection_critera
 cluster = args.cluster
 
 
-
+# Extracting selection from data base
 def select_from_database(database, selection_criteria):
 
     # Connect to database
@@ -52,4 +52,10 @@ def select_from_database(database, selection_criteria):
 
 
 selected = select_from_database(database, selection_criteria)
+
+# Identify files to be read
+
+
+# Sequence Selection (by random)
+
 
