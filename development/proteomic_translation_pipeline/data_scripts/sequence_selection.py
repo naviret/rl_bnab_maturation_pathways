@@ -1,15 +1,20 @@
+import io
 import os
 import sys
+import esm
 import time
+import torch
 import shutil
 import sqlite3
 import argparse
 import subprocess
 import numpy as np
 import pandas as pd
+from esm.data import BatchConverter
 
 
-parser = argparse.ArgumentParser(description="directory set up and MiXCR pipeline")
+
+parser = argparse.ArgumentParser(description="sequence selection pipeline")
 
 # Arguments
 parser.add_argument("data_path", type=str, help="path to data directory") # /data/jgray21/iriver11/characterizing_bnabs/data 
@@ -47,15 +52,15 @@ def select_from_database(database, selection_criteria):
     with sqlite3.connect(database) as connect:
 
         # Prepare a query
-        constraints = fields = str()
+        constraints = list()
         for selection in selection_criteria:
             select, value = selection.split(":")
-            constraints += f"{select}={value}"
+            constraints.append(f"{select} = {value}")
 
         query = f"""
             SELECT *
             FROM repertoire
-            WHERE {fields.rstrip(" AND")}
+            WHERE {" AND ".join(constraints)}
         """
 
         # Query database
@@ -71,7 +76,7 @@ selected = select_from_database(database, selection_criteria)
 # Create new table in database for sequences
 
 # Extract all nucleotide or amino acid sequences or BOTH
-extract = list()
+extract = list(["repertoire"])
 if peptide:
     extract.append("aaSeqImputedVDJRegion")
 if nucleotide:
@@ -88,17 +93,41 @@ fields_query += "embedding BLOB"
 with sqlite3.connect(database) as connect:
     with connect.cursor() as cursor:
         cursor.execute(f"""
-            CREATE TABLE repertoire (
+            CREATE TABLE sequence (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 {fields_query},
+                FOREIGN KEY (repertoire) REFERENCES reperetoire(repertoire)
             ) 
         """)
 
     connect.commit()
 
 
+# Generate ESM-2 embeddings
+def ESM2_embed(data):
+    
+    model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
+    model.eval()  # disables dropout for deterministic results
+
+    batch_converter = MyBatchConverter(alphabet=alphabet)
+    labels, batch_strs, batch_tokens = batch_converter(data)
+    batch_lens = (batch_tokens != alphabet.padding_idx).sum(1)
+
+    # Extract per-residue representations (on CPU)
+    with torch.no_grad():
+        results = model(batch_tokens, repr_layers=[33], return_contacts=True)
+    token_representations = results["representations"][33]
+
+    # Extract sequence representations
+    sequence_representations = []
+    for i, tokens_len in enumerate(batch_lens):
+        sequence_representations.append(token_representations[i, 1 : tokens_len - 1].mean(0))
+
+    return sequence_representations
 
 
+# Insert into database
+insert_query = ", ".join(extract + ["embedding"])
 
 # Identify files to be read
 repertoires = selected["repertoire"]
@@ -116,21 +145,54 @@ for rep in repertoires:
     # Extract sample size 
     seqs = seqs[:sample_size] 
 
-    # Generate ESM-2 embeddings for protein sequences
+    # Generate ESM-2 embeddings for protein sequences only
     if peptide: 
         idx = extract.index("aaSeqImputedVDJRegion")
-        peptide_seqs = seqs[:, idx]
+        peptide_seqs = np.char.upper(seqs[:, idx]).tolist()
+        
+        seq_embedddings = ESM2_embed(peptide_seqs)
+
+    insert = list()
+    for entry, embedding in zip(seqs.tolist(), seq_embedddings):
+        
+        # Insert repertoire address
+        entry.insert(0, rep)
+
+        # Serializing tensor
+        buffer = io.BytesIO()
+        torch.save(embedding, buffer)
+
+        # Adding buffer as a column
+        entry.append(buffer.getvalue())
+
+        # Insert query for sqlite3 database
+        insert.append(tuple(entry))
+
+    # Execute query
+    with sqlite3.connect(database) as connect:
+        with connect.cursor() as cursor:
+            cursor.executemany(f""" 
+                INSERT INTO sequence ({insert_query})
+                VALUES ({("?,"*(len(extract) + 1)).rstrip(",")})
+            """,
+            insert)
+
+        connect.commit()
 
 
 
+# ESM-2 BatchConverter class with some modifications
+class MyBatchConverter(BatchConverter):
+    
+    def __init__(self, alphabet, labels: bool = False, truncation_seq_length: int = None):
+        super().__init__(alphabet=alphabet, truncation_seq_length=truncation_seq_length)
+        self.label = False
 
+    def __call__(self, raw_batch):
 
+        if not self.label:
+            raw_batch = [(f"id{i}", seq_str) for i, seq_str in enumerate(raw_batch)]
 
-
-
-def ESM2_embed():
-    pass
-
-
-
-
+        labels, strs, tokens = super().__call__(raw_batch)
+        return labels, strs, tokens
+    

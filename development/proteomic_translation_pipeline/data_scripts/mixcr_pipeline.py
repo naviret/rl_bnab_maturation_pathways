@@ -83,7 +83,7 @@ with connect.cursor() as cursor:
     cursor.execute(f"""
         CREATE TABLE repertoire (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            {fields_query},
+            {fields_query}
         ) 
     """)
 
@@ -106,13 +106,11 @@ for i, rep in enumerate(repertoires):
 
 
 # Insert into database
-insert_query = str()
-for f in fields:
-    insert_query += f"{f},"
+insert_query = ", ".join(fields)
 
 with connect.cursor() as cursor:
     cursor.executemany(f""" 
-        INSERT INTO {data_set} ({insert_query})
+        INSERT INTO repertoire ({insert_query})
         VALUES ({("?,"*len(fields)).rstrip(",")})
     """,
     insert)
@@ -129,7 +127,7 @@ def MiXCR_analyze(repertoires, batch_size = 6):
         
         rep_batch = repertoires[i:i + batch_size]
         
-        processes = []
+        processes = list()
 
         for rep in rep_batch:
 
@@ -155,7 +153,7 @@ def MiXCR_export(repertoires, batch_size = 12):
         
         rep_batch = repertoires[i:i + batch_size]
         
-        processes = []
+        processes = list()
 
         for rep in rep_batch:
             
