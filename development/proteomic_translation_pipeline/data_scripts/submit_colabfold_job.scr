@@ -1,0 +1,33 @@
+#!/bin/bash
+#SBATCH --time=28:00:00
+#SBATCH --partition=a100
+#SBATCH --nodes=1
+#SBATCH --gres=gpu:1
+#SBATCH --ntasks-per-node=6
+#SBATCH --account=jgray21_gpu
+#SBATCH --exclude=gpu[02-04,16]
+
+# Load necessary modules
+module unload python
+module load cuda/11.1.0
+module load anaconda
+
+# Activate conda environment
+conda activate /data/jgray21/iriver11/localcolabfold/colabfold-conda
+
+# Read in directory
+FASTA=$1
+OUTPUT=$2
+mkdir -p $OUTPUT
+
+# Colabfold command
+colabfold_batch $FASTA $OUTPUT \
+    --model-type alphafold2_multimer_v3 \
+    --msa-mode mmseqs2_uniref \
+    --amber \
+    --num-relax 3 \
+    --num-recycle 20 \
+    --recycle-early-stop-tolerance 0.5 \
+    --custom-template-path \
+    --pair-mode unpaired \
+    --use-gpu-relax \

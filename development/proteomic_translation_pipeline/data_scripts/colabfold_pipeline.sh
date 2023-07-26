@@ -1,5 +1,5 @@
 # colabfold command
-colabfold_batch \
+colabfold_batch $FASTA_DIR $OUTPUT_DIR \
     --model-type alphafold2_multimer_v3 \
     --msa-mode mmseqs2_uniref \
     --amber \
@@ -9,4 +9,4 @@ colabfold_batch \
     --custom-template-path \
     --pair-mode unpaired \
     --use-gpu-relax \
-    $FASTA_DIR $OUTPUT_DIR
+    

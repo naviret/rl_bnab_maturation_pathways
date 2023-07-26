@@ -25,7 +25,7 @@ chains = args.chains
 fields = ["repertoire_address", "chain"] + args.fields 
 skip_directory = args.skip_directory
 download_list = args.download_list
-mixcr_mode = args.mixcr_mode
+mixcr_mode = args.mixcr_mode ##### [FUTURE DEV] #####
 
 
 # Path to Directories

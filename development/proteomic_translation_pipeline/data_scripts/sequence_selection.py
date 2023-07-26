@@ -196,19 +196,3 @@ class MyBatchConverter(BatchConverter):
         labels, strs, tokens = super().__call__(raw_batch)
         return labels, strs, tokens
     
-
-
-"""
-##### [FUTURE DEV] #####
-selection_criteria = args.selection_critera 
-
-    If there is more than one query then we need to allow for more than one selection criteria to be taken,
-    this can be done with a txt file while each row is the selection criteria for one query
-
-##### [FUTURE DEV] #####
-I should create a separate file for all the sqlite3 functions that I've created. I've started to
-reuse them in other files so it'll be better if I don't have to keep copying them   
-It would be cool if I could make a class called sqliteAPI that can instantiate the database and
-use all of the functions
-
-"""

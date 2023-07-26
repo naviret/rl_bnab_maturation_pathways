@@ -1,3 +1,9 @@
+# ==================================================== #
+# This file contains example MiXCR commands 
+# that I have used in the past to extract peptide 
+# repertoires from paired-end read data sets
+# ==================================================== #
+
 mixcr analyze generic-amplicon \
     --species hs \
     --rna \
