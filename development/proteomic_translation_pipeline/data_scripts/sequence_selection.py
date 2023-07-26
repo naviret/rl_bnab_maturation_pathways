@@ -76,7 +76,7 @@ selected = select_from_database(database, selection_criteria)
 # Create new table in database for sequences
 
 # Extract all nucleotide or amino acid sequences or BOTH
-extract = list(["repertoire"])
+extract = list(["repertoire_address"])
 if peptide:
     extract.append("aaSeqImputedVDJRegion")
 if nucleotide:
@@ -96,7 +96,7 @@ with sqlite3.connect(database) as connect:
             CREATE TABLE sequence (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 {fields_query},
-                FOREIGN KEY (repertoire) REFERENCES reperetoire(repertoire)
+                FOREIGN KEY (repertoire_address) REFERENCES reperetoire(repertoire_address)
             ) 
         """)
 
@@ -196,3 +196,14 @@ class MyBatchConverter(BatchConverter):
         labels, strs, tokens = super().__call__(raw_batch)
         return labels, strs, tokens
     
+
+
+"""
+##### [FUTURE DEV] #####
+selection_criteria = args.selection_critera 
+
+    If there is more than one query then we need to allow for more than one selection criteria to be taken,
+    this can be done with a txt file while each row is the selection criteria for one query
+
+
+"""
