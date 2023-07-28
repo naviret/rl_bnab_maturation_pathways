@@ -99,4 +99,49 @@ query = f"""
 """
 
 
-        
+
+""" ================================ ROSETTA CON 2023 POSTER PRESENTATION
+
+BACKGROUND:
+- Affinity maturation (AM) is the proecss by which B cells evolve to produce antibodies with 
+increased binding affinity, and thus, neutralizing activity, against some antigen [?].
+    - The variational force driving the AM process is called hypersomatic mutation, which accumulates
+    mutations in B cell receptors (BCRs) and selects those B cells with high neutralization activity
+    against some antigen. 
+- Broadly neutralizing antibodies (bnAbs) sometimes arise through AM by targetting conserved regions
+in the antigen of interest. This confers //high neutralization breadth// against a number of subtypes 
+of the same virus [?].
+- As a result, broadly neutralizing antibodies have gained much interest due to their promise in fighting
+some of the most variable, and consequently the most dangerous viruses in modern medicine. These include
+HIV, Influenza, Coronavirus, and other Hepatitus viruses. [?]
+
+MOTIVATION:
+- Thus, given representation of the AM landscape for specific bnAb lineages, finding a way to optimally traverse
+this landscape, ie. the features that standout in the pathway from germline to bnAb, 
+can give insight into optimal vaccination protocols for these dangerous and highly variable pathogens.
+- Gready search algorithms (like A*) and deep reinforcement learning approaches have been used in silico to optimize
+vaccination strategies to elicit bnAbs, so there is promise in their ability to characterize bnAb AM pathways [?].
+
+In this project we hope to:
+- develop a graph representation of the AM landscape
+- traverse this landscape using informed search algorithms and reinforcement learning
+
+DATA:
+Longitudinal dataset (Bio Project: PRJNA486355) of one patient who developed 
+antibody lineages against the MPER epitope [?], a highly known
+conserved region of the HIV-1 gp41 envelope protein [?].
+- taken over 654 days after identification of Fiebig I infection stage
+- 3 bnAb lineages (VRC42, VRC43, VRC46) for a total of 9 antibodies
+- unpaired heavy and light chain data
+- NGS nucleotide sequences
+- memory B cells
+
+METHODS/AIMS
+- Generate protein sequences from a DNA repretoire
+    - Gene alignments
+    - Found CDR regions and imputed aligned genes
+    
+
+
+
+"""
