@@ -83,6 +83,11 @@ selection_criteria = args.selection_critera
     - This will make use of functions I've already set up to iterate through txt.
     - Find better way to organize these functions with auxilliary files? 
 
+##### [FUTURE DEV] ##### {0005}
+Only do structure prediction on variable regions of heavy chain and light chain.
+
+    Need to figure out how to extract the variable region and remove the constant region
+
 ##### [USEFUL CMDS] #####
 This can be used for sequence selection 
 
@@ -131,17 +136,46 @@ Longitudinal dataset (Bio Project: PRJNA486355) of one patient who developed
 antibody lineages against the MPER epitope [?], a highly known
 conserved region of the HIV-1 gp41 envelope protein [?].
 - taken over 654 days after identification of Fiebig I infection stage
-- 3 bnAb lineages (VRC42, VRC43, VRC46) for a total of 9 antibodies
+- discovered 3 bnAb lineages (VRC42, VRC43, VRC46) for a total of 9 antibodies
 - unpaired heavy and light chain data
 - NGS nucleotide sequences
 - memory B cells
 
-METHODS/AIMS
-- Generate protein sequences from a DNA repretoire
+METHODS/AIMS:
+1. [Check] Generate protein sequences from a DNA repretoire
+    - Using MiXCR
     - Gene alignments
-    - Found CDR regions and imputed aligned genes
-    
+    - Found CDR regions and imputed best aligned gene hits
+2. [Check] Extract representative protein sequences 
+    - Embed sequences using ESM-2
+        - Large protein language models can capture both functional 
+        and structural properties of proteins, meaning that the resulting encoding 
+        is well-informed and representative of the entire sequence and
+        potential structure [13, 14]
+    - Cluster sequences using embeddings.
+        - Choose the most "centerered" sequences to be representatives of the cluster
+            - This is determined by finding the sequence with the 
+            smallest median Hamming distance from all other sequences in the cluster
+    - Randomly choose protein sequences 
+3. [Check] Build antibody-antigen structures using AF2
+    - Antigen template 
+    - Since unpaired heavy and light chain; pair all heavy chains 
+    with template light chain and vice versa
+        - heavy chain is more variable and has more 
+        interactions with light chain 
+    - Allow MSAs to build heavy chain and light chain
+4. Build graph landscape
+5. A* implementation using heuristics
+    - Show the heuristic functions
+6. Reinforcement learnign algorithm
+    - Show the model architechture figure and REWARD FUNCTIONS
 
-
+EXPECTATIONS: 
+- Reinforcement learning algorithm will find a policy that represents the decisions
+made in the AM pathway
+- Mapping the pathway using binding energy will show a general trend for decreasing 
+binding energy BUT with some exceptions since we might have to go from a high affinity
+antibody to a variable epitope to a lower affinity antidbody to a conserved epitope
+- Expect graph for heavy chain to look be more varied 
 
 """
