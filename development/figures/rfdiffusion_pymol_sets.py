@@ -6,7 +6,7 @@ def get_colors():
     Colors for RFdiffusion
     """
     cmd.set_color("good_gray",       [220,220,220]) #dcdcdc
-    cmd.set_color("good_teal",      [ 0.310, 0.725, 0.686 ]) #4FB9AF
+    cmd.set_color("good_teal",       [0.310, 0.725, 0.686 ]) #4FB9AF
     cmd.set_color("good_navaho",     [255,224,172]) #FFE0AC
     cmd.set_color("good_melon",      [255,198,178]) #FFC6B2
     cmd.set_color("good_pink",       [255,172,183]) #FFACB7
@@ -14,6 +14,7 @@ def get_colors():
     cmd.set_color("good_lightblue",  [149,150,198]) #9596C6
     cmd.set_color("good_blue",       [102,134,197]) #6686C5
     cmd.set_color("good_darkblue",   [75,95,170]) #4B5FAA
+    cmd.set_color("good_green",  [213,232,212]) #D5E8D4
 
 
 def get_lighting():
