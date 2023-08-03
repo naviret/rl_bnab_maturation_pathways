@@ -32,6 +32,7 @@ class CriticNetwork(nn.Module):
 
     
     def forward(self, state, action):
+        
         action_value = self.fc1(torch.cat([state, action], dim=1))
         action_value = F.relu(action_value)
         action_value = self.fc2(action_value)

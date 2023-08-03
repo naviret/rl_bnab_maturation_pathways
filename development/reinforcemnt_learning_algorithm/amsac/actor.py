@@ -28,7 +28,7 @@ class ActorNetwork(nn.Module):
         self.mu = nn.Linear(self.fc2_dims, self.num_actions)
         self.sigma = nn.Linear(self.fc2_dims, self.num_actions)
 
-        self.optimizer = optim.Adam(self.parameters(), lr=beta)
+        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
         self.device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
         self.to(self.device)
@@ -68,6 +68,7 @@ class ActorNetwork(nn.Module):
         # scalar quantity for loss calculation
         log_probs = log_probs.sum(1, keepdim=True)
 
+        return bounded_action, log_probs
 
     def save_checkpoint(self):
         torch.save(self.state_dict(), self.checkpoint_file)

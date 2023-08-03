@@ -179,3 +179,40 @@ antibody to a variable epitope to a lower affinity antidbody to a conserved epit
 - Expect graph for heavy chain to look be more varied 
 
 """
+
+
+
+
+
+
+""" ========================================= buffer.py
+
+##### [FUTURE DEV] ##### {0006}
+The way it's set up now, 
+
+    batch_size can't be bigger than memory_size --> implement a check for this
+
+    once memory_counter is bigger than batch_size, we will always do learning even
+    if only one more action is made BUT we still only choose randomly from all the tuples 
+    that we have
+
+        so what's the tradeoff here:
+            1. keep training on every iteration with mostly old values in current case
+            2. reset the memory_counter once the memory_size is surpassed then allow it 
+            to generate MORE new samples before training again (so that we have the same number
+            of samples as the batch size (at least))
+
+                what does this mean?
+                we are letting the policy be used more even though it
+                might not be a good policy BUT we still keep most of the old
+                values 
+
+                ---> tradeoff is: more new samples (one batch worth of new samples) vs 
+                only one new sample, this means less training overall (although easily solved by
+                increasing the amount of episodes)
+
+                    is it better that we will see more new MDP tuples or should we stick
+                    with the older tuples?
+
+
+"""
