@@ -63,9 +63,11 @@ class Agent():
         for name in value_state_dict:
             value_state_dict[name] = tau*value_state_dict[name].clone() + \
                                  (1 - tau)*target_value_state_dict[name].clone()
-                            ## soft update occurs here to get value network
-                            ## kind of equal to targe value network
+                            ## soft update occurs here to get target_value network
+                            ## kind of equal to value network, where value network
+                            ## is what we're actually learning
 
+        self.target_value.load_state_dict(value_state_dict)
 
     def save_models(self):
         print(".........saving models........." + "\n")
@@ -150,8 +152,10 @@ class Agent():
         #### self.scale includes entropy, 
         # gamma times the value of the state resulting from the action means less reward as more
         # actions are taken (for gamma less than 1)
+
+        # why is this the old policy? cuz we trained the actor network in the prev block
         q1_old_policy = self.critic_1.forward(state, action).view(-1)
-        q2_old_policy = self.critic_1.forward(state, action).view(-1)
+        q2_old_policy = self.critic_2.forward(state, action).view(-1)
         critic_1_loss = 0.5 * F.mse_loss(q1_old_policy, q_hat)
         critic_2_loss = 0.5 * F.mse_loss(q2_old_policy, q_hat)
 

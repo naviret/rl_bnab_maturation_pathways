@@ -168,7 +168,7 @@ METHODS/AIMS:
 5. A* implementation using heuristics
     - Show the heuristic functions
 6. Reinforcement learnign algorithm
-    - Show the model architechture figure and REWARD FUNCTIONS
+    - Show the model architechture figure and REWARD FUNCTIONS 
 
 EXPECTATIONS: 
 - Reinforcement learning algorithm will find a policy that represents the decisions
