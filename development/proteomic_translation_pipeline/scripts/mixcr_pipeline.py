@@ -143,6 +143,7 @@ with connect.cursor() as cursor:
     """,
     insert)
 
+connect.commit() # <----- changed 
 connect.close()
 
 
@@ -188,7 +189,7 @@ def MiXCR_export(repertoires, batch_size = 12):
             rep_clones_dir = os.path.join(clones_data_dir, rep, f"{rep}_clones.tsv")
 
             MiXCR = ["mixcr", "--export-productive-clones-only", "--impute-germline-on-export", "--drop-default-fields", 
-                        "--chains IGK", "-cloneId", "-readCount", "-aaFeatureImputed VDJRegion", "-nFeatureImputed VDJRegion", 
+                        "-cloneId", "-readCount", "-aaFeatureImputed VDJRegion", "-nFeatureImputed VDJRegion", 
                         f"{rep}_clones.clns", f"{rep_clones_dir}"]
 
             
