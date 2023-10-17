@@ -121,7 +121,7 @@ insert = list()
 for i, rep in enumerate(repertoires):
     
     # Repertoire names
-    rep_fields = rep.split("_") # <---- might have to change
+    rep_fields = rep.split("-") 
     rep_insert = [rep]
 
     # Extract only desired fields
