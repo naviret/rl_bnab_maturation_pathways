@@ -74,9 +74,11 @@ if not skip_directory:
     os.mkdir(data_set_dir)
     os.mkdir(raw_data_dir)
     os.mkdir(clones_data_dir)
-    shutil.move(download_list, raw_data_dir)
     
-
+    # Copy download list to raw data dir
+    download_list_raw = os.path.join(raw_data_dir, download_list)
+    shutil.copy(download_list, download_list_raw)
+    
     # Download all files into the raw directory
     max_tries = 10
     for i in range(max_tries):
