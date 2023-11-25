@@ -71,8 +71,8 @@ mixcr analyze generic-amplicon \
     --drop-non-CDR3-alignments \
     --assemble-contigs-by VDJRegion \
     --remove-step exportClones \
-    SRR8235277_R1.fastq \
-    SRR8235277_R2.fastq \
+    *_R1.fastq.gz \
+    *_R2.fastq.gz \
     results
 
 # concise
@@ -105,3 +105,14 @@ mixcr exportClones \
     clones.clns clones.tsv
 
 
+mixcr exportClones \
+    --add-step exportClones \
+    --export-productive-clones-only \
+    --impute-germline-on-export \
+    --drop-default-fields \
+    --chains IGK \
+    -cloneId \
+    -readCount \
+    -aaFeatureImputed VDJRegion \
+    -nFeatureImputed VDJRegion \
+    results.contigs.clns results.tsv \
