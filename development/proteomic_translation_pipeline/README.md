@@ -82,7 +82,7 @@ Notes:
 └── data/
     ├── &ltproject_title&gt/
     │   ├── &ltproject_title>.db
-│   ├── raw/
+    │   ├── raw/
     │   │   ├── download-list.txt
     │   │   ├── &ltrep_id&gt/
     │   │   │   ├── &ltrep_id&gt_R1.fastq.gz
