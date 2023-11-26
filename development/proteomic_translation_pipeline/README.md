@@ -99,44 +99,9 @@ Notes:
 
 `mixcr_pipeline.py` sets up the `raw` directory by copying the download text file onto `download-list.txt`. Then, it will use `aria2c` download utility to optimize and fail-proof file downloads. `mixcr_pipeline.py` will fork a subprocess to attempt download up to 10 times, and quit upon more than 10 failures.
 
-<pre>
-.
-└── data/
-    ├── &ltproject_title&gt/
-    │   ├── &ltproject_title>.db
-<span style="color: #cd0000">    │   ├── raw/
-    │   │   ├── download-list.txt
-    │   │   ├── &ltrep_id&gt/
-    │   │   │   ├── &ltrep_id&gt_R1.fastq.gz
-    │   │   │   └── &ltrep_id&gt_R2.fastq.gz
-    │   │   └── ... </span>
-    │   └── clones/
-    │       ├── &ltrep_id&gt/
-    │       │   └── &ltrep_id&gt_clones.tsv
-    │       └── ...
-    └── ...
-</pre>
-
 ### Step 2: Create Clones Directory
 
 `mixcr_pipeline.py` sets up the `clones` directory by creating all `<rep_id>` the folders in `raw`. These folders remain empty until MiXCR commands.
-
-<pre>
-.
-└── data/
-    ├── &ltproject_title&gt/
-    │   ├── &ltproject_title>.db
-    │   ├── raw/
-    │   │   ├── download-list.txt
-    │   │   ├── &ltrep_id&gt/
-    │   │   │   ├── &ltrep_id&gt_R1.fastq.gz
-    │   │   │   └── &ltrep_id&gt_R2.fastq.gz
-    │   │   └── ... </span>
-<span style="color: #cd0000">    │   └── clones/
-    │       ├── &ltrep_id&gt/
-    │       └── ...</span>
-    └── ...
-</pre>
 
 ### Step 3. Run Alignments and Assemble
 
