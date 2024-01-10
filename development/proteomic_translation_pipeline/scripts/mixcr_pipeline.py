@@ -94,7 +94,7 @@ mixcr_mode = args.mixcr_mode  ##### [FUTURE DEV] #####
 
 """ -------------------- DOWNLOAD UTILITY -------------------- """
 
-def download_with_aria(d_list):
+def download_with_aria(d_list, raw_data_dir):
     
     """
     Downloads linked files using aria2c by 
@@ -144,7 +144,7 @@ def download_with_aria(d_list):
 
 """ -------------------- MIXCR FUNCTION WRAPPERS -------------------- """
 
-def MiXCR_analyze(repertoires, batch_size=6):
+def MiXCR_analyze(repertoires, raw_data_dir, batch_size=6):
     
     """
     Execute MiXCR analyze with sequence 
@@ -216,7 +216,7 @@ def MiXCR_analyze(repertoires, batch_size=6):
                 print(f"Error: \n{stderr}.")
 
 
-def MiXCR_export(repertoires, batch_size=12):
+def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
     
     """
     Execute MiXCR exportClones in
@@ -326,7 +326,7 @@ def main():
         for i in range(max_tries):
             
             sys.stdout.write("Downloading...\n")
-            exit_code, stdout, stderror = download_with_aria(download_list)
+            exit_code, stdout, stderror = download_with_aria(download_list, raw_data_dir)
             if exit_code == 0:
                 sys.stdout.write("Download succesful.\n")
                 break
@@ -351,7 +351,7 @@ def main():
 
 
     """
-    Create sqlite 3 databse
+    Create sqlite3 databse
     """
     # Extract sql db fields.
     fields_query = ", ".join([f"{f} TEXT NOT NULL" for f in fields])
@@ -436,12 +436,12 @@ def main():
 
     # Run alignment + assemble.
     print("Run MiXCR alignment + assemble.")
-    MiXCR_analyze(repertoires=repertoires)
+    MiXCR_analyze(repertoires=repertoires, raw_data_dir=raw_data_dir)
     print("MiXCR alignment and assemble were successful.")
 
     # Run export clones.
     print("Run MiXCR export clones.")
-    MiXCR_export(repertoires=repertoires)
+    MiXCR_export(repertoires=repertoires, raw_data_dir=raw_data_dir, clones_data_dir=clones_data_dir)
     print("MiXCR export clones was succesful.")
 
 
