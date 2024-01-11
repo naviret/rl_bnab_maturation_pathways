@@ -17,13 +17,13 @@ from math import ceil
 """ -------------------- ARGPARSER -------------------- """
 
 # Defining ArgumentParser class to parse command line arguments
-parser = argparse.ArgumentParser(description="directory \
-                                 set up and MiXCR pipeline")
+parser = argparse.ArgumentParser(
+    description="directory \
+                                 set up and MiXCR pipeline"
+)
 
 # Arguments
-parser.add_argument("data_path", 
-                    type=str, 
-                    help="path to data directory")
+parser.add_argument("data_path", type=str, help="path to data directory")
 
 parser.add_argument(
     "--dataset",
@@ -85,7 +85,7 @@ args = parser.parse_args()  # Object that stores parsed arguments
 # Accesses parsed arguments from ArgumentParser
 data_dir = args.data_path
 data_set = args.dataset
-chains = args.chains
+chains = set(args.chains)
 fields = ["repertoire_address", "chain"] + args.fields
 skip_directory = args.skip_directory
 ori_download_list = args.download_list
@@ -94,10 +94,10 @@ mixcr_mode = args.mixcr_mode  ##### [FUTURE DEV] #####
 
 """ -------------------- DOWNLOAD UTILITY -------------------- """
 
+
 def download_with_aria(d_list, raw_data_dir):
-    
     """
-    Downloads linked files using aria2c by 
+    Downloads linked files using aria2c by
     starting a separate process.
 
     Parameters:
@@ -106,7 +106,7 @@ def download_with_aria(d_list, raw_data_dir):
     Returns:
     tuple: A tuple containing the following:
         - returncode (int): process success
-        - stdout (string): process standard output 
+        - stdout (string): process standard output
         - stder (string): process standard error
     int: The sum of the two numbers.
     """
@@ -144,11 +144,11 @@ def download_with_aria(d_list, raw_data_dir):
 
 """ -------------------- MIXCR FUNCTION WRAPPERS -------------------- """
 
+
 def MiXCR_analyze(repertoires, raw_data_dir, batch_size=6):
-    
     """
-    Execute MiXCR analyze with sequence 
-    alignments and assemble steps in 
+    Execute MiXCR analyze with sequence
+    alignments and assemble steps in
     parallelized process.
 
     Parameters:
@@ -163,8 +163,9 @@ def MiXCR_analyze(repertoires, raw_data_dir, batch_size=6):
     for i in range(0, len(repertoires), batch_size):
         rep_batch = repertoires[i : i + batch_size]
 
-        print(f"Running batch {i//batch_size + 1} \
-            of {ceil(len(repertoires)/batch_size)}.")
+        print(
+            f"Running batch {i//batch_size + 1} of {ceil(len(repertoires)/batch_size)}."
+        )
 
         processes = list()
 
@@ -208,16 +209,15 @@ def MiXCR_analyze(repertoires, raw_data_dir, batch_size=6):
             # Display returncode at failure
             if p.returncode != 0:
                 stdout, stderr = p.communicate()
-                print(f"Execution of repertoire {i + j + 1}, \
-                      {rep_batch[j]} failed with exit code \
-                      {p.returncode}.")
+                print(
+                    f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
+                )
 
                 print(f"Out: \n{stdout}.")
                 print(f"Error: \n{stderr}.")
 
 
 def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
-    
     """
     Execute MiXCR exportClones in
     parallelized processes.
@@ -235,15 +235,23 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
         rep_batch = repertoires[i : i + batch_size]
 
         print(
-            f"Running batch {i//batch_size + 1} \
-            of {ceil(len(repertoires)/batch_size)}."
+            f"Running batch {i//batch_size + 1} of {ceil(len(repertoires)/batch_size)}."
         )
 
         processes = list()
 
         for rep in rep_batch:
+            # Extract chain
+            chain = None
+            rep_fields = rep.split("-")
+            for r in rep_fields:
+                if r.upper() in chains:
+                    chain = r.upper()
+
             rep_dir = os.path.join(raw_data_dir, rep)
-            rep_clones_dir = os.path.join(clones_data_dir, rep, f"{rep}_clones.tsv")
+            rep_clones_dir = os.path.join(
+                clones_data_dir, rep, f"{rep}_clones.tsv"
+            )
 
             MiXCR = [
                 "mixcr",
@@ -255,9 +263,13 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
                 "-readCount",
                 "-aaFeatureImputed VDJRegion",
                 "-nFeatureImputed VDJRegion",
+                f"--chains {chain}" if chain is not None else None,
                 f"{rep}_clones.clns",
                 f"{rep_clones_dir}",
             ]
+
+            # Remove None from list
+            MiXCR = [arg for arg in MiXCR if arg is not None]
 
             process = subprocess.Popen(
                 MiXCR,
@@ -275,17 +287,17 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
             # Display returncode at failure
             if p.returncode != 0:
                 stdout, stderr = p.communicate()
-                print(f"Execution of repertoire {i + j + 1}, \
-                      {rep_batch[j]} failed with exit code \
-                      {p.returncode}.")
+                print(
+                    f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
+                )
                 print(f"Out: \n{stdout}.")
                 print(f"Error: \n{stderr}.")
+
 
 """ -------------------- MAIN -------------------- """
 
 
 def main():
-    
     """
     Main function.
 
@@ -295,22 +307,20 @@ def main():
     Returns:
     None
     """
-    
+
     """ 
     Extract path to directories. 
     """
-    data_set_dir = os.path.join(data_dir, data_set) # dataset dir
-    raw_data_dir = os.path.join(data_set_dir, "raw") # raw dir
-    clones_data_dir = os.path.join(data_set_dir, "clones") # clones dir
-    sql_db = os.path.join(data_set_dir, f"{data_set}.db") # sql db
-
+    data_set_dir = os.path.join(data_dir, data_set)  # dataset dir
+    raw_data_dir = os.path.join(data_set_dir, "raw")  # raw dir
+    clones_data_dir = os.path.join(data_set_dir, "clones")  # clones dir
+    sql_db = os.path.join(data_set_dir, f"{data_set}.db")  # sql db
 
     """
     Create directory 
     structure and download files. 
     """
     if not skip_directory:
-    
         # Create directories
         os.mkdir(data_set_dir)
         os.mkdir(raw_data_dir)
@@ -322,22 +332,23 @@ def main():
         shutil.copy(ori_download_list, raw_dir_download_list)
 
         # Download linked files.
-        max_tries = 10 # attempt 10 times.
+        max_tries = 10  # attempt 10 times.
         for i in range(max_tries):
-            
             sys.stdout.write("Downloading...\n")
-            exit_code, stdout, stderror = download_with_aria(download_list, raw_data_dir)
+            exit_code, stdout, stderror = download_with_aria(
+                download_list, raw_data_dir
+            )
             if exit_code == 0:
                 sys.stdout.write("Download succesful.\n")
                 break
-            
+
             else:
                 sys.stdout.write(
                     f"\nDownload attempt {i + 1} failed with exit code: {exit_code}. "
                 )
                 sys.stdout.write(f"{stdout}")
                 time.sleep(5)
-    
+
         # Failure.
         if exit_code != 0:
             raise Exception("Download failed.")
@@ -348,7 +359,6 @@ def main():
             if os.path.isdir(os.path.join(raw_data_dir, rep)):
                 rep_dir = os.path.join(clones_data_dir, rep)
                 os.mkdir(rep_dir)
-
 
     """
     Create sqlite3 databse
@@ -370,8 +380,6 @@ def main():
         # Applying data creation changes.
         connect.commit()
 
-
-
     """
     Insert meta info into
     sqlite3 database for each
@@ -379,7 +387,9 @@ def main():
     """
     # Extract repertoire names.
     repertoires = [
-        rep for rep in os.listdir(raw_data_dir) if os.path.isdir(os.path.join(raw_data_dir, rep))
+        rep
+        for rep in os.listdir(raw_data_dir)
+        if os.path.isdir(os.path.join(raw_data_dir, rep))
     ]
 
     # Extract field entries.
@@ -406,7 +416,6 @@ def main():
 
         insert.append(tuple(rep_insert))
 
-
     # Insert into database.
     insert_query = ", ".join(fields)
 
@@ -429,7 +438,6 @@ def main():
         # Save changes.
         connect.commit()
 
-
     """
     Execute MiXCR Pipeline
     """
@@ -437,18 +445,18 @@ def main():
     # Run alignment + assemble.
     print("Run MiXCR alignment + assemble.")
     MiXCR_analyze(repertoires=repertoires, raw_data_dir=raw_data_dir)
-    print("MiXCR alignment and assemble were successful.")
 
     # Run export clones.
     print("Run MiXCR export clones.")
-    MiXCR_export(repertoires=repertoires, raw_data_dir=raw_data_dir, clones_data_dir=clones_data_dir)
-    print("MiXCR export clones was succesful.")
+    MiXCR_export(
+        repertoires=repertoires,
+        raw_data_dir=raw_data_dir,
+        clones_data_dir=clones_data_dir,
+    )
 
 
 if __name__ == "__main__":
     main()
-
-
 
 
 ### NOTES:
