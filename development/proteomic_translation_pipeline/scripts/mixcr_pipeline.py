@@ -213,11 +213,90 @@ def MiXCR_analyze(repertoires, raw_data_dir, batch_size=6):
                     f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
                 )
 
-                print(f"Out: \n{stdout}.")
-                print(f"Error: \n{stderr}.")
+                print(f"Out: {stdout}")
+                print(f"Error: {stderr}")
 
 
-def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
+# def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
+#     """
+#     Execute MiXCR exportClones in
+#     parallelized processes.
+
+#     Parameters:
+#     repertoires (list): list of repertoires.
+#     batch_size (int, optional): number of MiXCR analyze
+#     to execute in one batch.
+
+#     Returns:
+#     None
+#     """
+
+#     for i in range(0, len(repertoires), batch_size):
+#         rep_batch = repertoires[i : i + batch_size]
+
+#         print(
+#             f"Running batch {i//batch_size + 1} of {ceil(len(repertoires)/batch_size)}."
+#         )
+
+#         processes = list()
+
+#         for rep in rep_batch:
+#             # Extract chain
+#             chain = None
+#             rep_fields = rep.split("-")
+#             for r in rep_fields:
+#                 if r.upper() in chains:
+#                     chain = r.upper()
+
+#             rep_dir = os.path.join(raw_data_dir, rep)
+#             rep_clones_dir = os.path.join(
+#                 clones_data_dir, rep, f"{rep}_clones.tsv"
+#             )
+
+#             MiXCR = [
+#                 "mixcr",
+#                 "exportClones",
+#                 "--export-productive-clones-only",
+#                 "--impute-germline-on-export",
+#                 "--drop-default-fields",
+#                 "-cloneId",
+#                 "-readCount",
+#                 "-aaFeatureImputed VDJRegion",
+#                 "-nFeatureImputed VDJRegion",
+#                 f"--chains {chain}" if chain is not None else None,
+#                 f"{rep}_clones.clns",
+#                 f"{rep_clones_dir}",
+#             ]
+
+#             # Remove None from list
+#             MiXCR = [arg for arg in MiXCR if arg is not None]
+
+#             process = subprocess.Popen(
+#                 MiXCR,
+#                 stdout=subprocess.PIPE,
+#                 stderr=subprocess.PIPE,
+#                 cwd=rep_dir,
+#                 text=True,
+#             )
+#             processes.append(process)
+
+#         # Wait on all processes
+#         for j, p in enumerate(processes):
+#             p.wait()
+
+#             # Display returncode at failure
+#             if p.returncode != 0:
+#                 stdout, stderr = p.communicate()
+#                 print(
+#                     f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
+#                 )
+#                 print(f"Out: \n{stdout}.")
+#                 print(f"Error: \n{stderr}.")
+
+
+def MiXCR_export(
+    repertoires, data_dir, raw_data_dir, clones_data_dir, batch_size=12
+):
     """
     Execute MiXCR exportClones in
     parallelized processes.
@@ -248,8 +327,8 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
                 if r.upper() in chains:
                     chain = r.upper()
 
-            rep_dir = os.path.join(raw_data_dir, rep)
-            rep_clones_dir = os.path.join(
+            rep_raw_path = os.path.join(raw_data_dir, rep, f"{rep}_clones.clns")
+            rep_clones_path = os.path.join(
                 clones_data_dir, rep, f"{rep}_clones.tsv"
             )
 
@@ -264,8 +343,8 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
                 "-aaFeatureImputed VDJRegion",
                 "-nFeatureImputed VDJRegion",
                 f"--chains {chain}" if chain is not None else None,
-                f"{rep}_clones.clns",
-                f"{rep_clones_dir}",
+                f"{rep_raw_path}",
+                f"{rep_clones_path}",
             ]
 
             # Remove None from list
@@ -275,7 +354,7 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
                 MiXCR,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=rep_dir,
+                cwd=data_dir,
                 text=True,
             )
             processes.append(process)
@@ -290,8 +369,8 @@ def MiXCR_export(repertoires, raw_data_dir, clones_data_dir, batch_size=12):
                 print(
                     f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
                 )
-                print(f"Out: \n{stdout}.")
-                print(f"Error: \n{stderr}.")
+                print(f"Out: {stdout}")
+                print(f"Error: {stderr}")
 
 
 """ -------------------- MAIN -------------------- """
@@ -316,15 +395,25 @@ def main():
     clones_data_dir = os.path.join(data_set_dir, "clones")  # clones dir
     sql_db = os.path.join(data_set_dir, f"{data_set}.db")  # sql db
 
+    # relative dirs
+    rel_raw_data_dir = os.path.join(data_set, "raw")
+    rel_clones_data_dir = os.path.join(data_set, "clones")
+
     """
     Create directory 
     structure and download files. 
     """
     if not skip_directory:
         # Create directories
-        os.mkdir(data_set_dir)
-        os.mkdir(raw_data_dir)
-        os.mkdir(clones_data_dir)
+        try:
+            os.mkdir(data_set_dir)
+            os.mkdir(raw_data_dir)
+            os.mkdir(clones_data_dir)
+        except FileExistsError:
+            print(
+                "Directory already exists. Re-run with --skip-directory.",
+                file=sys.stderr,
+            )
 
         # Copy download list to raw data dir.
         download_list = "download-list.txt"
@@ -448,10 +537,16 @@ def main():
 
     # Run export clones.
     print("Run MiXCR export clones.")
+    # MiXCR_export(
+    #     repertoires=repertoires,
+    #     raw_data_dir=raw_data_dir,
+    #     clones_data_dir=clones_data_dir,
+    # )
     MiXCR_export(
         repertoires=repertoires,
-        raw_data_dir=raw_data_dir,
-        clones_data_dir=clones_data_dir,
+        data_dir=data_dir,
+        raw_data_dir=rel_raw_data_dir,
+        clones_data_dir=rel_clones_data_dir,
     )
 
 
@@ -462,3 +557,87 @@ if __name__ == "__main__":
 ### NOTES:
 ### data dir: # /data/jgray21/iriver11/characterizing_bnabs/data
 ### To run locally: python ../scripts/mixcr_pipeline.py data
+### its okay if i provide a
+### provide absolute data path
+### relative path from where mixcr_pipeline is
+### relative path to mixcr_pipeline.py and run at data's parent
+### WHY? because everything is built from where parent is run and relative to data dir
+
+
+# def MiXCR_export(
+#     repertoires, data_dir, raw_data_dir, clones_data_dir, batch_size=12
+# ):
+#     """
+#     Execute MiXCR exportClones in
+#     parallelized processes.
+
+#     Parameters:
+#     repertoires (list): list of repertoires.
+#     batch_size (int, optional): number of MiXCR analyze
+#     to execute in one batch.
+
+#     Returns:
+#     None
+#     """
+
+#     for i in range(0, len(repertoires), batch_size):
+#         rep_batch = repertoires[i : i + batch_size]
+
+#         print(
+#             f"Running batch {i//batch_size + 1} of {ceil(len(repertoires)/batch_size)}."
+#         )
+
+#         processes = list()
+
+#         for rep in rep_batch:
+#             # Extract chain
+#             chain = None
+#             rep_fields = rep.split("-")
+#             for r in rep_fields:
+#                 if r.upper() in chains:
+#                     chain = r.upper()
+
+#             rep_raw_path = f"{os.path.join(raw_data_dir, rep)}_clones.clns"
+#             rep_clones_path = os.path.join(
+#                 clones_data_dir, rep, f"{rep}_clones.tsv"
+#             )
+
+#             MiXCR = [
+#                 "mixcr",
+#                 "exportClones",
+#                 "--export-productive-clones-only",
+#                 "--impute-germline-on-export",
+#                 "--drop-default-fields",
+#                 "-cloneId",
+#                 "-readCount",
+#                 "-aaFeatureImputed VDJRegion",
+#                 "-nFeatureImputed VDJRegion",
+#                 f"--chains {chain}" if chain is not None else None,
+#                 f"{rep_raw_path}",
+#                 f"{rep_clones_path}",
+#             ]
+
+#             # Remove None from list
+#             MiXCR = [arg for arg in MiXCR if arg is not None]
+
+#             process = subprocess.Popen(
+#                 MiXCR,
+#                 stdout=subprocess.PIPE,
+#                 stderr=subprocess.PIPE,
+#                 cwd=data_dir,
+#                 text=True,
+#             )
+#             processes.append(process)
+
+#         # Wait on all processes
+#         for j, p in enumerate(processes):
+#             p.wait()
+
+#             # Display returncode at failure
+#             if p.returncode != 0:
+#                 stdout, stderr = p.communicate()
+#                 print(
+#                     f"Execution of repertoire {i + j + 1}, {rep_batch[j]} failed with exit code {p.returncode}."
+#                 )
+#                 print(f"Out: \n{stdout}.")
+#                 print(f"Error: \n{stderr}.")
