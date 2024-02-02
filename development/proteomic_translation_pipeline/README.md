@@ -28,6 +28,9 @@ To run `mixcr_pipeline.py`:
 ```
 
 The path to the data directory is a required positional argument. This is the directory where the project files will be downloaded and processed.
+> **Note:** The path to the data directory **must be an absolute path.**
+
+This is necessary to ensure that files are written to the correct directories created relative to the data directory. 
 
 Other arguments include:
 
