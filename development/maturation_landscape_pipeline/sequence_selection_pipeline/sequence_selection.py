@@ -12,45 +12,99 @@ import numpy as np
 import pandas as pd
 from esm.data import BatchConverter
 
+""" -------------------- ARGPARSER -------------------- """
 
-
+# Defining ArgumentParser class to parse command line arguments
 parser = argparse.ArgumentParser(description="sequence selection pipeline")
 
 # Arguments
-parser.add_argument("data_path", type=str, help="path to data directory") # /data/jgray21/iriver11/characterizing_bnabs/data 
-parser.add_argument("--dataset", "--dataset", dest="data_set", type=str, default="RV217_40512", help="name of data set")
-parser.add_argument("--database", dest="database", type=str, help="path to sqlite database")  
-parser.add_argument("-peptide", dest="peptide", action="store_true", help="obtain peptide (amino acid) sequences")  
-parser.add_argument("-nucleotide", dest="nucleotide", action="store_true", help="obtain nucleotide sequences")  
-parser.add_argument("--selection-critera", dest="selection_critera", nargs="+", type=str, default=["day:day240", "chain:igh"], help="selection criteria formatted as <select:value>")
-parser.add_argument("-cluster", dest="cluster", action="store_true", help="extract representatives from clusters, otherwise extract random")
-parser.add_argument("--sample-size", dest="sample_size", type=int, default=1000, help="number of sequences to extract")
+parser.add_argument(
+    "data_path", type=str, help="path to data directory"
+)  # /data/jgray21/iriver11/characterizing_bnabs/data
+
+parser.add_argument(
+    "--dataset",
+    dest="data_set",
+    type=str,
+    default="RV217_40512",
+    help="name of data set",
+)
+
+parser.add_argument(
+    "--database", dest="database", type=str, help="path to sqlite database"
+)
+
+parser.add_argument(
+    "--peptide",
+    dest="peptide",
+    action="store_true",
+    help="obtain peptide (amino acid) sequences",
+)
+
+parser.add_argument(
+    "--nucleotide",
+    dest="nucleotide",
+    action="store_true",
+    help="obtain nucleotide sequences",
+)
+
+parser.add_argument(
+    "--selection-critera",
+    dest="selection_critera",
+    nargs="+",
+    type=str,
+    default=["day:day240", "chain:igh"],
+    help="selection criteria formatted as <select:value>",
+)
+
+parser.add_argument(
+    "--cluster",
+    dest="cluster",
+    action="store_true",
+    help="extract representatives from clusters, otherwise extract random",
+)
+
+parser.add_argument(
+    "--sample-size",
+    dest="sample_size",
+    type=int,
+    default=1000,
+    help="number of sequences to extract",
+)
+
 args = parser.parse_args()
 
 if not (args.peptide or args.nucleotide):
-    parser.error("no sequence type requested, add -peptide or -nucleotide or both")
+    parser.error(
+        "no sequence type requested, add -peptide or -nucleotide or both"
+    )
+
+if args.peptide and args.nucleotide:
+    parser.error(
+        "both peptide and nucleotide sequences requested, only supports one type of sequence at a time"
+    )
 
 data_dir = args.data_path
 data_set = args.dataset
-database = os.path.join(data_dir, data_set) if args.database == None else args.database
+database = (
+    os.path.join(data_dir, data_set) if args.database is None else args.database
+)
 peptide = args.peptide
-nucleotide = args.nucleotide 
-selection_criteria = args.selection_critera ##### [FUTURE DEV] #####
-cluster = args.cluster ##### [FUTURE DEV] #####
+nucleotide = args.nucleotide  # [FUTURE DEV] #####
+selection_criteria = args.selection_critera  ##### [FUTURE DEV] #####
+cluster = args.cluster  ##### [FUTURE DEV] #####
 sample_size = args.sample_size
 
 
-# Path to Directories
+# Path to directories
 data_set_dir = os.path.join(data_dir, data_set)
 clones_data_dir = os.path.join(data_set_dir, "clones")
 
 
 # Extracting selection from database
 def select_from_database(database, selection_criteria):
-
     # Connect to database
     with sqlite3.connect(database) as connect:
-
         # Prepare a query
         constraints = list()
         for selection in selection_criteria:
@@ -72,7 +126,6 @@ def select_from_database(database, selection_criteria):
 selected = select_from_database(database, selection_criteria)
 
 
-
 # Create new table in database for sequences
 
 # Extract all nucleotide or amino acid sequences or BOTH
@@ -92,20 +145,21 @@ fields_query += "embedding BLOB"
 # Create a sqlite3 database
 with sqlite3.connect(database) as connect:
     with connect.cursor() as cursor:
-        cursor.execute(f"""
+        cursor.execute(
+            f"""
             CREATE TABLE sequence (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 {fields_query},
                 FOREIGN KEY (repertoire_address) REFERENCES reperetoire(repertoire_address)
             ) 
-        """)
+        """
+        )
 
     connect.commit()
 
 
 # Generate ESM-2 embeddings
 def ESM2_embed(data):
-    
     model, alphabet = esm.pretrained.esm2_t33_650M_UR50D()
     model.eval()  # disables dropout for deterministic results
 
@@ -121,7 +175,9 @@ def ESM2_embed(data):
     # Extract sequence representations
     sequence_representations = []
     for i, tokens_len in enumerate(batch_lens):
-        sequence_representations.append(token_representations[i, 1 : tokens_len - 1].mean(0))
+        sequence_representations.append(
+            token_representations[i, 1 : tokens_len - 1].mean(0)
+        )
 
     return sequence_representations
 
@@ -132,29 +188,27 @@ insert_query = ", ".join(extract + ["embedding"])
 # Identify files to be read
 repertoires = selected["repertoire"]
 for rep in repertoires:
-    
     rep_dir = os.path.join(clones_data_dir, rep, f"{rep}_clones.tsv")
     clones = pd.read_table(rep_dir, sep="\t")
 
     # Sequence selection (random)
     seqs = clones[extract].to_numpy()
-    
+
     # Shuffle rows
     np.random.shuffle(seqs)
 
-    # Extract sample size 
-    seqs = seqs[:sample_size] 
+    # Extract sample size
+    seqs = seqs[:sample_size]
 
     # Generate ESM-2 embeddings for protein sequences only
-    if peptide: 
+    if peptide:
         idx = extract.index("aaSeqImputedVDJRegion")
         peptide_seqs = np.char.upper(seqs[:, idx]).tolist()
-        
+
         seq_embedddings = ESM2_embed(peptide_seqs)
 
     insert = list()
     for entry, embedding in zip(seqs.tolist(), seq_embedddings):
-        
         # Insert repertoire address
         entry.insert(0, rep)
 
@@ -171,28 +225,32 @@ for rep in repertoires:
     # Execute query
     with sqlite3.connect(database) as connect:
         with connect.cursor() as cursor:
-            cursor.executemany(f""" 
+            cursor.executemany(
+                f""" 
                 INSERT INTO sequence ({insert_query})
                 VALUES ({("?,"*(len(extract) + 1)).rstrip(",")})
             """,
-            insert)
+                insert,
+            )
 
         connect.commit()
 
 
-
 # ESM-2 BatchConverter class with some modifications
 class MyBatchConverter(BatchConverter):
-    
-    def __init__(self, alphabet, labels: bool = False, truncation_seq_length: int = None):
-        super().__init__(alphabet=alphabet, truncation_seq_length=truncation_seq_length)
+    def __init__(
+        self, alphabet, labels: bool = False, truncation_seq_length: int = None
+    ):
+        super().__init__(
+            alphabet=alphabet, truncation_seq_length=truncation_seq_length
+        )
         self.label = False
 
     def __call__(self, raw_batch):
-
         if not self.label:
-            raw_batch = [(f"id{i}", seq_str) for i, seq_str in enumerate(raw_batch)]
+            raw_batch = [
+                (f"id{i}", seq_str) for i, seq_str in enumerate(raw_batch)
+            ]
 
         labels, strs, tokens = super().__call__(raw_batch)
         return labels, strs, tokens
-    
