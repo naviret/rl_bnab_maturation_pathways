@@ -9,7 +9,7 @@ Antibody-mediated immunity plays a crucial role in the adaptive immune response 
 ## Table of Contents
 
 - [Installation](#installation)
-- [Scripts](#workflow)
+- [Modules](#scripts)
 - [Under Development](#underdevelopment)
 - [Contributing](#contributing)
 - [License](#license)
@@ -29,7 +29,7 @@ To use the scripts developed in this repository, you must clone this repository 
 
 ```Bash
     # To create conda environment:
-    conda create --name rl_bnab_maturation --file requirements.txt
+    conda create --name rl_bnab_maturation_pathways --file requirements.txt
 ```
 
 3. Activate `rl_bnab_maturation_pathways` conda environment.
@@ -47,9 +47,9 @@ After activation your terminal should display the activated conda environment:
 
 ```
 
-## Scripts
+## Modules
 
-This repository has the following scripts available:
+This repository has the following modules available:
 
 <pre>
 .
