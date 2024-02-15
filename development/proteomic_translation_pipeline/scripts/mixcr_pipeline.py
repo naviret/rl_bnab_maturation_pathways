@@ -62,6 +62,14 @@ parser.add_argument(
 )
 
 parser.add_argument(
+    "--only-directory",
+    dest="only_directory",
+    action="store_true",
+    help="onnly performes directory set up & \
+        downloads. skips MiXCR pipeline",
+)
+
+parser.add_argument(
     "-d",
     "--download-list",
     dest="download_list",
@@ -88,6 +96,7 @@ data_set = args.dataset
 chains = set(args.chains)
 fields = ["repertoire_address", "chain"] + args.fields
 skip_directory = args.skip_directory
+only_directory = args.only_directory
 ori_download_list = args.download_list
 mixcr_mode = args.mixcr_mode  ##### [FUTURE DEV] #####
 
@@ -327,6 +336,7 @@ def main():
     structure and download files. 
     """
     if not skip_directory:
+
         # Create directories
         try:
             os.mkdir(data_set_dir)
@@ -337,6 +347,7 @@ def main():
                 "Directory already exists. Re-run with --skip-directory.",
                 file=sys.stderr,
             )
+            sys.exit(1)
 
         # Copy download list to raw data dir.
         download_list = "download-list.txt"
@@ -372,100 +383,102 @@ def main():
                 rep_dir = os.path.join(clones_data_dir, rep)
                 os.mkdir(rep_dir)
 
-    """
-    Create sqlite3 databse
-    """
-    # Extract sql db fields.
-    fields_query = ", ".join([f"{f} TEXT NOT NULL" for f in fields])
+    if not only_directory:
 
-    # Open and create a sqlite3 database.
-    with sqlite3.connect(sql_db) as connect:
-        cursor = connect.cursor()
-        cursor.execute(
-            f"""
-            CREATE TABLE repertoire (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                {fields_query} ) 
         """
+        Create sqlite3 databse
+        """
+        # Extract sql db fields.
+        fields_query = ", ".join([f"{f} TEXT NOT NULL" for f in fields])
+
+        # Open and create a sqlite3 database.
+        with sqlite3.connect(sql_db) as connect:
+            cursor = connect.cursor()
+            cursor.execute(
+                f"""
+                CREATE TABLE repertoire (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    {fields_query} ) 
+            """
+            )
+
+            # Applying data creation changes.
+            connect.commit()
+
+        """
+        Insert meta info into
+        sqlite3 database for each
+        repertoire
+        """
+        # Extract repertoire names.
+        repertoires = [
+            rep
+            for rep in os.listdir(raw_data_dir)
+            if os.path.isdir(os.path.join(raw_data_dir, rep))
+        ]
+
+        # Extract field entries.
+        insert = list()
+        for i, rep in enumerate(repertoires):
+            # Repertoire names
+            rep_fields = rep.split("-")
+            rep_dict = {"repertoire_address": rep}
+
+            # Extract only desired fields.
+            for r in rep_fields:
+                if r.upper() in chains:
+                    rep_dict["chain"] = r.upper()
+
+                for f in fields:
+                    if f in r:
+                        rep_dict[f] = r.lower()
+
+            # Checks for valid insert row, skips if invalid
+            try:
+                rep_insert = [rep_dict[f] for f in fields]
+            except KeyError:
+                continue
+
+            insert.append(tuple(rep_insert))
+
+        # Insert into database.
+        insert_query = ", ".join(fields)
+
+        with sqlite3.connect(sql_db) as connect:
+            # Begin a transaction.
+            connect.execute("BEGIN")
+
+            # Create cursor to write to database.
+            cursor = connect.cursor()
+
+            # Execute query.
+            cursor.executemany(
+                f""" 
+                    INSERT INTO repertoire ({insert_query})
+                        VALUES ({", ".join(["?"] * len(fields))})
+                """,
+                insert,
+            )
+
+            # Save changes.
+            connect.commit()
+
+        """
+        Execute MiXCR Pipeline
+        """
+
+        # Run alignment + assemble.
+        print("Run MiXCR alignment + assemble.")
+        MiXCR_analyze(repertoires=repertoires, raw_data_dir=raw_data_dir)
+
+        # Run export clones.
+        print("Run MiXCR export clones.")
+        MiXCR_export(
+            repertoires=repertoires,
+            data_dir=data_dir,
+            raw_data_dir=rel_raw_data_dir,
+            clones_data_dir=rel_clones_data_dir,
         )
-
-        # Applying data creation changes.
-        connect.commit()
-
-    """
-    Insert meta info into
-    sqlite3 database for each
-    repertoire
-    """
-    # Extract repertoire names.
-    repertoires = [
-        rep
-        for rep in os.listdir(raw_data_dir)
-        if os.path.isdir(os.path.join(raw_data_dir, rep))
-    ]
-
-    # Extract field entries.
-    insert = list()
-    for i, rep in enumerate(repertoires):
-        # Repertoire names
-        rep_fields = rep.split("-")
-        rep_dict = {"repertoire_address": rep}
-
-        # Extract only desired fields.
-        for r in rep_fields:
-            if r.upper() in chains:
-                rep_dict["chain"] = r.upper()
-
-            for f in fields:
-                if f in r:
-                    rep_dict[f] = r.lower()
-
-        # Checks for valid insert row, skips if invalid
-        try:
-            rep_insert = [rep_dict[f] for f in fields]
-        except KeyError:
-            continue
-
-        insert.append(tuple(rep_insert))
-
-    # Insert into database.
-    insert_query = ", ".join(fields)
-
-    with sqlite3.connect(sql_db) as connect:
-        # Begin a transaction.
-        connect.execute("BEGIN")
-
-        # Create cursor to write to database.
-        cursor = connect.cursor()
-
-        # Execute query.
-        cursor.executemany(
-            f""" 
-                INSERT INTO repertoire ({insert_query})
-                    VALUES ({", ".join(["?"] * len(fields))})
-            """,
-            insert,
-        )
-
-        # Save changes.
-        connect.commit()
-
-    """
-    Execute MiXCR Pipeline
-    """
-
-    # Run alignment + assemble.
-    print("Run MiXCR alignment + assemble.")
-    MiXCR_analyze(repertoires=repertoires, raw_data_dir=raw_data_dir)
-
-    # Run export clones.
-    print("Run MiXCR export clones.")
-    MiXCR_export(
-        repertoires=repertoires,
-        data_dir=data_dir,
-        raw_data_dir=rel_raw_data_dir,
-        clones_data_dir=rel_clones_data_dir,
-    )
 
 
 if __name__ == "__main__":
